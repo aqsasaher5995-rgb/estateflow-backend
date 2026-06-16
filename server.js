@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 
@@ -20,21 +19,9 @@ app.use(cors({
 
 app.use(express.json());
 
-// Create uploads folder if not exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-
-// Configure multer for image upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// ============ VERCEL COMPATIBLE MULTER SETUP ============
+// Vercel uses memory storage (no disk write permission)
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
@@ -51,8 +38,7 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+console.log('📁 Running on Vercel - using memory storage for uploads');
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -281,8 +267,11 @@ app.post('/api/properties', authMiddleware, upload.single('image'), async (req, 
     
     const propertyData = { ...body, ownerId: req.user._id };
     
+    // Note: For Vercel, images are stored in memory, not as files
     if (req.file) {
-      propertyData.images = [`http://localhost:5000/uploads/${req.file.filename}`];
+      // In production, you'd upload to a cloud storage service like Cloudinary, AWS S3, etc.
+      // For now, we'll just store a placeholder
+      propertyData.images = [`https://via.placeholder.com/400x300?text=${encodeURIComponent(body.title)}`];
     }
     
     const property = new Property(propertyData);
