@@ -1,12 +1,12 @@
-import 'dotenv/config';
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
@@ -347,9 +347,7 @@ app.get('/api/properties/my/stats', authMiddleware, async (req, res) => {
   }
 });
 
-// ============ NEW API ENDPOINTS ============
-
-// 1. Maintenance Endpoints
+// ============ MAINTENANCE ENDPOINTS ============
 app.post('/api/maintenance', authMiddleware, async (req, res) => {
   try {
     const { propertyId, title, category, priority, description } = req.body;
@@ -423,7 +421,7 @@ app.put('/api/maintenance/:id/status', authMiddleware, async (req, res) => {
   }
 });
 
-// 2. Reviews Endpoints
+// ============ REVIEWS ENDPOINTS ============
 app.post('/api/properties/:id/reviews', authMiddleware, async (req, res) => {
   try {
     const { rating, comment } = req.body;
@@ -453,7 +451,7 @@ app.get('/api/properties/:id/reviews', async (req, res) => {
   }
 });
 
-// 3. Rent Payment Endpoints
+// ============ PAYMENTS ENDPOINTS ============
 app.post('/api/payments', authMiddleware, async (req, res) => {
   try {
     const { propertyId, amount, month, cardLast4 } = req.body;
@@ -484,7 +482,6 @@ app.get('/api/payments/my', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 
 // ============ LEASE SCHEMA ============
 const leaseSchema = new mongoose.Schema({
@@ -629,4 +626,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-export default app;
+
+module.exports = app;
