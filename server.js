@@ -9,9 +9,9 @@ const path = require('path');
 
 const app = express();
 
-// ============ CORS FIX ============
+// ============ CORS FIX (Vercel + Local) ============
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://estateflow-frontend.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -20,7 +20,6 @@ app.use(cors({
 app.use(express.json());
 
 // ============ VERCEL COMPATIBLE MULTER SETUP ============
-// Vercel uses memory storage (no disk write permission)
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
@@ -149,16 +148,28 @@ const authMiddleware = async (req, res, next) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, phone, role } = req.body;
+    
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ name, email, password: hashedPassword, phone, role: role || 'tenant' });
     await user.save();
+    
     const token = jwt.sign({ id: user._id }, 'secret123', { expiresIn: '7d' });
-    res.json({ success: true, message: 'User registered', data: { user: { id: user._id, name, email, role: user.role }, token } });
+    res.json({ 
+      success: true, 
+      message: 'User registered successfully', 
+      data: { 
+        user: { id: user._id, name, email, role: user.role }, 
+        token 
+      } 
+    });
   } catch (error) {
+    console.error('Register error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -176,7 +187,14 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: user._id }, 'secret123', { expiresIn: '7d' });
-    res.json({ success: true, message: 'Login successful', data: { user: { id: user._id, name: user.name, email: user.email, role: user.role }, token } });
+    res.json({ 
+      success: true, 
+      message: 'Login successful', 
+      data: { 
+        user: { id: user._id, name: user.name, email: user.email, role: user.role }, 
+        token 
+      } 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -267,10 +285,7 @@ app.post('/api/properties', authMiddleware, upload.single('image'), async (req, 
     
     const propertyData = { ...body, ownerId: req.user._id };
     
-    // Note: For Vercel, images are stored in memory, not as files
     if (req.file) {
-      // In production, you'd upload to a cloud storage service like Cloudinary, AWS S3, etc.
-      // For now, we'll just store a placeholder
       propertyData.images = [`https://via.placeholder.com/400x300?text=${encodeURIComponent(body.title)}`];
     }
     
