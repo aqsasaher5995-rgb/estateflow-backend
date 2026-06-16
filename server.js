@@ -9,10 +9,9 @@ const path = require('path');
 
 const app = express();
 
-// ============ CORS FIX (Vercel + Local) ============
+// ============ CORS FIX ============
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://estateflow-frontend.vercel.app'],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -86,6 +85,25 @@ const propertySchema = new mongoose.Schema({
 
 const Property = mongoose.model('Property', propertySchema);
 
+// ============ PUBLIC STATS ROUTES ============
+app.get('/api/users/count', async (req, res) => {
+  try {
+    const count = await User.countDocuments();
+    res.json({ success: true, count });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/users/agents/count', async (req, res) => {
+  try {
+    const count = await User.countDocuments({ role: 'agent' });
+    res.json({ success: true, count });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ============ MAINTENANCE SCHEMA ============
 const maintenanceRequestSchema = new mongoose.Schema({
   propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
@@ -149,7 +167,6 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, phone, role } = req.body;
     
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
