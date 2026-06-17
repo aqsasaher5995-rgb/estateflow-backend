@@ -9,10 +9,9 @@ const path = require('path');
 
 const app = express();
 
-// ============ CORS FIX ============
+// ============ CORS FIX (Allow All) ============
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://estateflow-frontend.vercel.app'],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
