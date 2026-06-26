@@ -150,7 +150,7 @@ const authMiddleware = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    const decoded = jwt.verify(token, 'secret123');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ success: false, message: 'User not found' });
@@ -176,7 +176,7 @@ app.post('/api/auth/register', async (req, res) => {
     const user = new User({ name, email, password: hashedPassword, phone, role: role || 'tenant' });
     await user.save();
     
-    const token = jwt.sign({ id: user._id }, 'secret123', { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user._id, id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ 
       success: true, 
       message: 'User registered successfully', 
@@ -203,7 +203,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
-    const token = jwt.sign({ id: user._id }, 'secret123', { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user._id, id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ 
       success: true, 
       message: 'Login successful', 
